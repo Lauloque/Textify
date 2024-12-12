@@ -38,8 +38,7 @@ Allows quick navigation to a specific line in the text editor. Accessible throug
 
 Designed for managing recently opened script files in the Blender Text Editor. This addon adds functionality to `Text > Open Recent` and the Sidebar > Open Recent Panel (UI List) to facilitate easy management of open recent items. You can add the current script to the open recent menu, remove items, and rearrange them by moving up or down. For clarity, this addon includes a toggle to display the filename **`__init__.py`** as the folder's name in the Open Recent menu.
 
-![ezgif-5-925313e1a7](https://github.com/user-attachments/assets/d9ae4324-6392-4ff2-80e4-57ee73cd97fe)
-
+![ezgif-5-fa1a71069e](https://github.com/user-attachments/assets/4b67e2b6-18d5-4f3c-a9bf-4c4302a0c9d7)
 
 ## Trim Whitespace
 
