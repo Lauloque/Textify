@@ -24,5 +24,9 @@ copyright = [
 wheels = [
    "./wheels/autopep8-2.3.2-py2.py3-none-any.whl",
    "./wheels/pycodestyle-2.14.0-py2.py3-none-any.whl",
-
 ]
+
+[permissions]
+network = "Download and install Python modules for script formatting"
+files = "Read/write settings, and manage scripts on disk"
+clipboard = "Copy class bl_idname and other identifiers from the Code Map to the clipboard"
