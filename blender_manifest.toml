@@ -1,0 +1,28 @@
+schema_version = "1.0.0"
+
+id = "textify"
+version = "1.7.0"
+name = "Textify"
+tagline = "Streamline and Enhance Blender’s Text Editor"
+maintainer = "Jishnu jithu <jishnukv661@gmail.com>"
+type = "add-on"
+
+website = "https://github.com/DesignLipsx/Textify/"
+
+tags = ["Text Editor", "Development"]
+
+blender_version_min = "4.2.0"
+
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
+
+copyright = [
+  "2024 Jishnu Jithu",
+]
+
+wheels = [
+   "./wheels/autopep8-2.3.2-py2.py3-none-any.whl",
+   "./wheels/pycodestyle-2.14.0-py2.py3-none-any.whl",
+
+]
