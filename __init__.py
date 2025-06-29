@@ -1,3 +1,22 @@
+##### BEGIN GPL LICENSE BLOCK #####
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+##### END GPL LICENSE BLOCK #####
+
+
 if "bpy" in locals():
     import importlib
     importlib.reload(tools)
@@ -16,7 +35,6 @@ else:
 import json
 
 from pathlib import Path
-from bpy.types import Operator, AddonPreferences
 from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty, FloatVectorProperty, FloatProperty
 
 
@@ -140,7 +158,7 @@ def update_sidebar_category(self, context):
         bpy.utils.register_class(cls)
 
 
-class TEXTIFY_preferences(AddonPreferences):
+class TEXTIFY_preferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
     # Custom panel category
@@ -755,7 +773,7 @@ class TEXTIFY_PT_toggle_popover(bpy.types.Panel):
     bl_idname = "TEXTIFY_PT_toggle_popover"
     bl_space_type = 'TEXT_EDITOR'
     bl_region_type = 'WINDOW'
-    bl_ui_units_x = 10
+    bl_ui_units_x = 9
 
     def draw(self, context):
         layout = self.layout
@@ -807,7 +825,7 @@ def register():
     bpy.types.TEXT_HT_header.append(add_to_header)
 
     keymap.register_keymap()
-    #bpy.app.timers.register(auto_restore_prefs, first_interval=0.1)
+    bpy.app.timers.register(auto_restore_prefs, first_interval=0.1)
     textify_icons.load_icons()
 
 
