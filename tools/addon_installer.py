@@ -615,6 +615,7 @@ class ADDON_INSTALLER_OT_set_root_dir(bpy.types.Operator):
 #                    UI Drawing
 # -------------------------------------------------------------
 
+
 def draw_installer_ui(layout, context):
     """Enhanced UI drawing function"""
     text = context.space_data.text if context.space_data else None
