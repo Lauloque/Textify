@@ -20,11 +20,13 @@ def get_addon_prefs(context):
 
 
 def get_active_text():
-    return bpy.context.space_data.text if bpy.context.space_data else None
+    return getattr(bpy.context.space_data, "text", None)
 
 
 def bookmark_jump(self, context):
     text = get_active_text()
+    if not text:
+        return
     settings = text.bookmark_settings
     text = context.space_data.text
 
@@ -78,7 +80,7 @@ class BOOKMARK_LINE_OT_manage(Operator):
     def poll(cls, context):
         prefs = get_addon_prefs(context)
         return (
-            prefs.enable_bookmark_line and
+            getattr(prefs, "enable_bookmark_line", False) and
             context.space_data and
             context.space_data.type == 'TEXT_EDITOR' and
             context.space_data.text is not None
@@ -135,7 +137,7 @@ class BOOKMARK_LINE_OT_manage(Operator):
                     updated_items.append((old_index, target_content))
                     continue
 
-                # Fallback: search nearby for the same content (locality-preserving)
+                # Fallback: search nearby for the same content
                 found_index = -1
                 search_range = range(max(0, old_index - 5),
                                      min(len(current_lines), old_index + 6))
@@ -146,35 +148,40 @@ class BOOKMARK_LINE_OT_manage(Operator):
 
                 if found_index != -1:
                     updated_items.append((found_index, target_content))
-                # else: skip if not found (line deleted)
 
-            # Replace all with updated list
-            settings.bookmark_items.clear()
-            for line_index, line_content in updated_items:
-                new_item = settings.bookmark_items.add()
-                new_item.line_index = line_index
-                new_item.line_content = line_content
+            # Only update if changed
+            if len(updated_items) != len(settings.bookmark_items) or any(
+                b.line_index != new[0] or b.line_content != new[1]
+                for b, new in zip(settings.bookmark_items, updated_items)
+            ):
+                settings.bookmark_items.clear()
+                for line_index, line_content in updated_items:
+                    new_item = settings.bookmark_items.add()
+                    new_item.line_index = line_index
+                    new_item.line_content = line_content
 
         elif self.action == 'SORT':
-            # Re-map all bookmarks to current line indices before sorting
             text_lines = [line.body.strip() for line in text.lines]
             updated_items = []
 
             for b in settings.bookmark_items:
                 try:
-                    # Match based on content — assumes each line is unique
                     new_index = text_lines.index(b.line_content)
                     updated_items.append((new_index, b.line_content))
                 except ValueError:
-                    continue  # Skip if line content no longer exists
+                    continue  # Skip missing lines
 
-            updated_items.sort(key=lambda pair: pair[0])  # Sort by new index
+            updated_items.sort(key=lambda pair: pair[0])
 
-            settings.bookmark_items.clear()
-            for line_index, line_content in updated_items:
-                new_item = settings.bookmark_items.add()
-                new_item.line_index = line_index
-                new_item.line_content = line_content
+            # Only update if sorting changes the order
+            existing = [(b.line_index, b.line_content)
+                        for b in settings.bookmark_items]
+            if existing != updated_items:
+                settings.bookmark_items.clear()
+                for line_index, line_content in updated_items:
+                    new_item = settings.bookmark_items.add()
+                    new_item.line_index = line_index
+                    new_item.line_content = line_content
 
         return {'FINISHED'}
 
@@ -232,8 +239,7 @@ def draw_bookmark_ui(layout):
 
         col.separator()
         col.operator("bookmark_line.manage",
-                        text="", icon='SORTSIZE').action = 'SORT'
-
+                     text="", icon='SORTSIZE').action = 'SORT'
 
 
 class BOOKMARK_LINE_OT_popup(Operator):
@@ -245,7 +251,7 @@ class BOOKMARK_LINE_OT_popup(Operator):
     def poll(cls, context):
         prefs = get_addon_prefs(context)
         return (
-            prefs.enable_bookmark_line and
+            getattr(prefs, "enable_bookmark_line", False) and
             context.space_data and
             context.space_data.type == 'TEXT_EDITOR' and
             context.space_data.text is not None
@@ -272,8 +278,8 @@ class BOOKMARK_LINE_PT_Panel(Panel):
     def poll(cls, context):
         prefs = get_addon_prefs(context)
         return (
-            prefs.enable_bookmark_line and
-            prefs.show_bookmark_line_panel and
+            getattr(prefs, "enable_bookmark_line", False) and
+            getattr(prefs, "show_bookmark_line_panel", False) and
             context.space_data and
             context.space_data.type == 'TEXT_EDITOR' and
             context.space_data.text is not None
@@ -311,4 +317,3 @@ def unregister():
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-
