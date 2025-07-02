@@ -1,7 +1,6 @@
 import bpy
 import platform
 import subprocess
-
 from pathlib import Path
 
 
@@ -16,39 +15,47 @@ class TEXT_OT_reveal_in_explorer(bpy.types.Operator):
     bl_idname = "text.reveal_in_explorer"
     bl_label = "Reveal In Explorer"
     bl_description = "Open the script's folder in the system file browser"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return (
+            context.space_data and
+            context.space_data.text and
+            context.space_data.text.filepath
+        )
 
     def execute(self, context):
-        text = context.space_data.text
-        if not text or not text.filepath:
-            self.report({'WARNING'}, "No saved file to reveal")
+        script_path = Path(bpy.path.abspath(context.space_data.text.filepath))
+
+        if not script_path.exists():
+            self.report({'WARNING'}, "Please save the script first.")
             return {'CANCELLED'}
 
-        filepath = bpy.path.abspath(text.filepath)
-        system = platform.system()
+        script_folder = script_path.parent
+        current_os = platform.system()
 
         try:
-            if system == "Windows":
-                filepath_win = str(filepath)
-                subprocess.run(["explorer", f'/select,{filepath_win}'], check=True)
-            elif system == "Darwin":
-                subprocess.run(['open', '-R', filepath], check=True)
-            elif system == "Linux":
-                folder = str(Path(filepath).parent)
-                subprocess.run(['xdg-open', folder], check=True)
+            if current_os == "Windows":
+                subprocess.run(["explorer", "/select,", str(script_path)])
+            elif current_os == "Darwin":
+                subprocess.run(["open", "-R", str(script_path)])
+            elif current_os == "Linux":
+                subprocess.run(["xdg-open", str(script_folder)])
             else:
-                self.report({'ERROR'}, f"Unsupported OS: {system}")
+                self.report(
+                    {'ERROR'}, f"Unsupported operating system: {current_os}")
                 return {'CANCELLED'}
-
-            return {'FINISHED'}
-
+        except FileNotFoundError:
+            self.report(
+                {'ERROR'}, f"Could not find a file explorer command for {current_os}.")
+            return {'CANCELLED'}
         except Exception as e:
-            self.report({'ERROR'}, f"System open failed: {e}. Falling back to wm.path_open.")
-            try:
-                bpy.ops.wm.path_open(filepath=str(Path(filepath).parent))
-                return {'FINISHED'}
-            except Exception as fallback_error:
-                self.report({'ERROR'}, f"Fallback also failed: {fallback_error}")
-                return {'CANCELLED'}
+            self.report({'ERROR'}, f"An error occurred: {e}")
+            return {'CANCELLED'}
+
+        self.report({'INFO'}, f"Opened folder and selected: {script_path}")
+        return {'FINISHED'}
 
 
 def draw_footer_menu(self, context):
@@ -56,8 +63,8 @@ def draw_footer_menu(self, context):
     text = context.space_data.text
     prefs = get_addon_prefs(context)
 
-    if text and text.filepath and prefs.enable_open_script_folder:
-        if prefs.enable_character_count:
+    if text and text.filepath and getattr(prefs, "enable_open_script_folder", False):
+        if getattr(prefs, "enable_character_count", False):
             layout.separator(type='LINE')
         else:
             layout.separator_spacer()
