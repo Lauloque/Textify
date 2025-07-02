@@ -3,17 +3,12 @@ import re
 
 
 def get_addon_prefs(context):
-    """
-    Get the addon preferences by searching for the textify addon.
-    Returns the preferences object or None if not found.
-    """
     for addon_id in context.preferences.addons.keys():
         if 'textify' in addon_id.lower():
             return context.preferences.addons[addon_id].preferences
     return None
 
 
-# Helper functions
 def to_snake_case(text):
     text = re.sub(r'[\s\-]+', '_', text)
     text = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', text)
@@ -31,17 +26,17 @@ class TEXTIFY_OT_convert_case(bpy.types.Operator):
     bl_description = "Convert the case of selected text"
     bl_options = {'REGISTER', 'UNDO'}
 
+    case_type: bpy.props.StringProperty()
+
     @classmethod
     def poll(cls, context):
         prefs = get_addon_prefs(context)
         return (
-            prefs.enable_case_convert and
+            getattr(prefs, "enable_case_convert", False) and
             context.space_data and
             context.space_data.type == 'TEXT_EDITOR' and
             context.space_data.text is not None
         )
-
-    case_type: bpy.props.StringProperty()
 
     def execute(self, context):
         text = context.space_data.text
@@ -52,13 +47,8 @@ class TEXTIFY_OT_convert_case(bpy.types.Operator):
         line = text.current_line
         sel_line = text.select_end_line
 
-        # Automatically select word under cursor if no selection exists
-        if (
-            line == sel_line and
-            text.current_character == text.select_end_character
-        ):
+        if line == sel_line and text.current_character == text.select_end_character:
             bpy.ops.text.select_word()
-            # Update after selection
             line = text.current_line
             sel_line = text.select_end_line
 
@@ -75,12 +65,11 @@ class TEXTIFY_OT_convert_case(bpy.types.Operator):
 
         original = line.body[start:end]
 
-        # Convert case
         if self.case_type == 'UPPERCASE':
             converted = original.upper()
         elif self.case_type == 'LOWERCASE':
             converted = original.lower()
-        elif self.case_type == 'TITELCASE':
+        elif self.case_type == 'TITLECASE':
             converted = original.title()
         elif self.case_type == 'CAPITALIZE':
             converted = original.capitalize()
@@ -108,7 +97,7 @@ class TEXTIFY_MT_change_case_menu(bpy.types.Menu):
         cases = [
             ('UPPERCASE', "UPPER CASE"),
             ('LOWERCASE', "lower case"),
-            ('TITELCASE', "Titel Case"),
+            ('TITLECASE', "Title Case"),
             ('CAPITALIZE', "Capitalize"),
             ('SNAKECASE', "snake_case"),
             ('CAMELCASE', "CamelCase"),
@@ -118,10 +107,9 @@ class TEXTIFY_MT_change_case_menu(bpy.types.Menu):
                             text=label).case_type = case_id
 
 
-# Add to Edit menu
 def menu_func(self, context):
     prefs = get_addon_prefs(context)
-    if prefs.enable_case_convert:
+    if getattr(prefs, "enable_case_convert", False):
         self.layout.separator()
         self.layout.menu(TEXTIFY_MT_change_case_menu.bl_idname)
 
@@ -144,4 +132,3 @@ def unregister():
     bpy.types.TEXT_MT_format.remove(menu_func)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-
