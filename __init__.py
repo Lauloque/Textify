@@ -852,8 +852,12 @@ def unregister():
 
     keymap.unregister_keymap()
 
-    if add_to_header in bpy.types.TEXT_HT_header:
+    try:
         bpy.types.TEXT_HT_header.remove(add_to_header)
+    except ValueError:
+        pass
+    except Exception as e:
+        print(f"Error removing add_to_header from TEXT_HT_header: {e}")
 
     textify_icons.unload_icons()
 
