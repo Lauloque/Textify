@@ -3,11 +3,6 @@ import subprocess
 import sys
 
 
-# -------------------------------------------------------------
-# Utilities
-# -------------------------------------------------------------
-
-
 def get_addon_prefs(context):
     for addon_id in context.preferences.addons.keys():
         if 'textify' in addon_id.lower():
@@ -37,11 +32,6 @@ def install_modules(modules):
     except subprocess.CalledProcessError as e:
         print(f"[Installer Error] {e}")
         return False
-
-
-# -------------------------------------------------------------
-# Install Operator
-# -------------------------------------------------------------
 
 
 class TEXT_OT_install_formatter_deps(bpy.types.Operator):
@@ -81,13 +71,8 @@ class TEXT_OT_install_formatter_deps(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# -------------------------------------------------------------
-# Format Operator
-# -------------------------------------------------------------
-
-
 class TEXTIFY_OT_format_autopep8(bpy.types.Operator):
-    """Format current script using autopep8"""
+    """Format current script using autopep8 (ignores E402)"""
     bl_idname = "textify.format_autopep8"
     bl_label = "Format with autopep8"
     bl_options = {'REGISTER', 'UNDO'}
@@ -102,14 +87,15 @@ class TEXTIFY_OT_format_autopep8(bpy.types.Operator):
             import autopep8
         except ImportError:
             self.report(
-                {'ERROR'}, "autopep8 is not installed. Run the install operator from preferences.")
+                {'ERROR'}, "autopep8 is not installed. Use the install operator in preferences.")
             return {'CANCELLED'}
 
-        source_code = "".join([line.body + "\n" for line in text.lines])
+        source_code = "\n".join(line.body for line in text.lines)
 
         try:
-            formatted_code = autopep8.fix_code(source_code, options={'ignore': ['E402']}
-                                               )
+            # Ignore E402 (imports not at top of file)
+            formatted_code = autopep8.fix_code(
+                source_code, options={'ignore': ['E402']})
         except Exception as e:
             self.report({'ERROR'}, f"Formatting failed: {e}")
             return {'CANCELLED'}
@@ -123,16 +109,10 @@ class TEXTIFY_OT_format_autopep8(bpy.types.Operator):
 
 
 def menu_func(self, context):
-    prefs = get_addon_prefs(context)
-    if prefs.enable_script_formatter:
+    if getattr(get_addon_prefs(context), "enable_script_formatter", False):
         self.layout.separator()
         self.layout.operator(
             TEXTIFY_OT_format_autopep8.bl_idname, icon='FILE_SCRIPT')
-
-
-# -------------------------------------------------------------
-# Registration
-# -------------------------------------------------------------
 
 
 classes = (
@@ -151,4 +131,3 @@ def unregister():
     bpy.types.TEXT_MT_format.remove(menu_func)
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-
