@@ -495,7 +495,7 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
         name="Recent File Data Path",
         description="Directory to store recent file history",
         subtype='DIR_PATH',
-        default=bpy.utils.user_resource('SCRIPTS')
+        default=bpy.utils.user_resource('CONFIG')
     )
     show_open_recent_panel: BoolProperty(
         name="Show Open Recent Panel",
