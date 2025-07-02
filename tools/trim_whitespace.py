@@ -9,17 +9,15 @@ def get_addon_prefs(context):
 
 
 def draw_menu(self, context):
-    """Append trim whitespace operator to context menu if needed."""
+    """Append the trim whitespace operator to the context menu if any trailing whitespace exists."""
     prefs = get_addon_prefs(context)
-
-    if not prefs.enable_trim_whitespace:
+    if not getattr(prefs, "enable_trim_whitespace", False):
         return
 
     text_block = context.space_data.text
     if not text_block:
         return
 
-    # Show operator only if at least one line has trailing spaces
     if any(line.body.rstrip() != line.body for line in text_block.lines):
         layout = self.layout
         layout.operator("text.trim_whitespaces", icon="GRIP")
@@ -30,12 +28,13 @@ class TEXT_OT_trim_whitespaces(bpy.types.Operator):
     """Trim trailing whitespaces in the current text block."""
     bl_idname = "text.trim_whitespaces"
     bl_label = "Trim Whitespaces"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         prefs = get_addon_prefs(context)
         return (
-            prefs.enable_trim_whitespace and
+            getattr(prefs, "enable_trim_whitespace", True) and
             context.space_data and
             context.space_data.type == 'TEXT_EDITOR' and
             context.space_data.text
@@ -43,10 +42,6 @@ class TEXT_OT_trim_whitespaces(bpy.types.Operator):
 
     def execute(self, context):
         text_block = context.space_data.text
-        if not text_block:
-            self.report({'WARNING'}, "No text block found.")
-            return {'CANCELLED'}
-
         removed_chars = 0
 
         for line in text_block.lines:
