@@ -1,4 +1,5 @@
 import bpy
+import rna_keymap_ui
 
 
 KEYMAP_GROUPS = [
@@ -75,6 +76,14 @@ KEYMAP_GROUPS = [
                 "type": "S", "value": "PRESS",
                 "ctrl": True, "shift": True, "alt": False
             },
+            {
+                "operator": "wm.call_menu",
+                "type": "O", "value": "PRESS",
+                "ctrl": True, "shift": False, "alt": True,
+                "properties": {
+                    "name": "TEXTIFY_MT_open_recent",
+                }
+            },
         ]
     },
 ]
@@ -87,19 +96,29 @@ keys = []
 def get_hotkey_entry_item(km, item):
     kmi_name = item["operator"]
 
-    for i, km_item in enumerate(km.keymap_items):
-        if km.keymap_items.keys()[i] == kmi_name:
-            if "prop_name" in item:
-                kmi_value = item["prop_name"]
-                if km.keymap_items[i].properties.name == kmi_value:
-                    return km_item
-            return km_item
-    return None  # not needed, since no return means None, but keeping for readability
+    for km_item in km.keymap_items:
+        if km_item.idname != kmi_name:
+            continue
+
+        # If the item specifies properties, make sure all match
+        if "properties" in item:
+            match = True
+            for prop_name, prop_value in item["properties"].items():
+                if not hasattr(km_item.properties, prop_name):
+                    match = False
+                    break
+                if getattr(km_item.properties, prop_name) != prop_value:
+                    match = False
+                    break
+            if not match:
+                continue
+
+        return km_item
+
+    return None
 
 
 def draw_keymap_ui(layout, context):
-    import rna_keymap_ui
-
     col = layout.column()
     kc = context.window_manager.keyconfigs.user
 
@@ -108,7 +127,8 @@ def draw_keymap_ui(layout, context):
         col.label(text=group["label"])
         col.separator(factor=0.2)
 
-        km = kc.keymaps.get("Text")
+        keymap_name = group.get("keymap", "Text")
+        km = kc.keymaps.get(keymap_name)
         if not km:
             continue
 
@@ -126,9 +146,15 @@ def register_keymap():
         return
 
     for group in KEYMAP_GROUPS:
-        km = kc.keymaps.get("Text")
+        # Use appropriate keymap based on the operator
+        keymap_name = "Text"
+        if group["label"] == "Search Window":
+            keymap_name = "Window"
+
+        km = kc.keymaps.get(keymap_name)
         if not km:
-            km = kc.keymaps.new(name="Text", space_type='TEXT_EDITOR')
+            km = kc.keymaps.new(
+                name=keymap_name, space_type='EMPTY' if keymap_name == "Window" else 'TEXT_EDITOR')
 
         for item in group["items"]:
             kmi = km.keymap_items.new(
@@ -140,7 +166,6 @@ def register_keymap():
                 alt=item.get("alt", False)
             )
 
-            # Set custom properties (e.g., name for wm.call_menu_pie)
             if "properties" in item:
                 for prop_name, prop_value in item["properties"].items():
                     setattr(kmi.properties, prop_name, prop_value)
@@ -153,4 +178,3 @@ def unregister_keymap():
     for km, kmi in keys:
         km.keymap_items.remove(kmi)
     keys.clear()
-
