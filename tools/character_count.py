@@ -24,11 +24,13 @@ def draw_character_count(self, context):
 
     total_characters = sum(len(line.body) for line in text.lines)
     selection_active = text.current_line_index != text.select_end_line_index or \
-                       text.current_character != text.select_end_character
+        text.current_character != text.select_end_character
 
     if selection_active:
-        start_line, end_line = sorted((text.current_line_index, text.select_end_line_index))
-        start_char, end_char = sorted((text.current_character, text.select_end_character))
+        start_line, end_line = sorted(
+            (text.current_line_index, text.select_end_line_index))
+        start_char, end_char = sorted(
+            (text.current_character, text.select_end_character))
 
         if start_line == end_line:
             selected_characters = abs(end_char - start_char)
@@ -43,7 +45,8 @@ def draw_character_count(self, context):
         cursor_col = text.select_end_character + 1
         layout.label(text=f"Ln {cursor_line}, Col {cursor_col}")
         layout.separator(type="LINE")
-        layout.label(text=f"{selected_characters} of {total_characters} characters")
+        layout.label(
+            text=f"{selected_characters} of {total_characters} characters")
     else:
         cursor_line = text.current_line_index + 1
         cursor_col = text.current_character + 1
