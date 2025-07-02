@@ -279,7 +279,7 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
     )
 
     # Addon Installer preferences
-    zip_name_style: bpy.props.EnumProperty(
+    zip_name_style: EnumProperty(
         name="Zip Name Style",
         description="Choose how the addon zip file is named.",
         items=[
@@ -289,7 +289,7 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
         ],
         default='NAME_DASH_VERSION'
     )
-    addon_installer_popup_width: bpy.props.IntProperty(
+    addon_installer_popup_width: IntProperty(
         name="Popup Width",
         description="Adjust the width of the Addon Installer popup dialog",
         default=400,
@@ -353,17 +353,18 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
     )
 
     # Hightlight Occurrences preferences
-    highlight_mode: bpy.props.EnumProperty(
+    highlight_mode: EnumProperty(
         name="Highlight Mode",
         items=[
             ('AUTO', "Auto", "Use selection if no find text is given"),
             ('SELECTION', "Selection", "Only highlight selected text"),
             ('FIND_TEXT', "Find Text", "Only highlight find text"),
         ],
-        default='FIND_TEXT'
+        default='FIND_TEXT',
+        update=highlight_occurrences.update_highlight
     )
     colors = {
-        "BLUE": ((0.25, 0.33, 0.45, 1), (1, 1, 1, 1), (0.18, 0.44, 0.61, 1), (0.14, 0.6, 1, 0.55)),
+        "BLUE": ((0.25, 0.33, 0.45, .07), (1, 1, 1, 1), (0.18, 0.44, 0.61, 1), (0.14, 0.6, 1, 0.55)),
         "RED": ((0.58, 0.21, 0.21, 1), (1, 1, 1, 1), (0.64, 0.27, 0.27, 1), (1, 0.21, 0.21, 0.5)),
         "GREEN": ((0.24, 0.39, 0.26, 1), (1, 1, 1, 1), (0.2, 0.5, 0.19, 1), (0.04, 1.0, 0.008, 0.4)),
         "YELLOW": ((0.39, 0.38, 0.07, 1), (1, 1, 1, 1), (0.46, 0.46, 0, 1), (1, 0.79, 0.09, 0.4)),
