@@ -29,10 +29,7 @@ from mathutils import Vector
 from itertools import chain
 from collections import deque
 
-if bpy.app.version < (4, 0, 0):
-    from bgl import glLineWidth, glEnable, glDisable, GL_BLEND
-
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, EnumProperty
 
 
 # --- Credits for Highlight Occurrences ---
@@ -50,7 +47,6 @@ shader_uniform_float = shader.uniform_float
 shader_bind = shader.bind
 iterchain = chain.from_iterable
 wrap_chars = {' ', '-'}
-p = None
 
 
 def get_addon_prefs(context):
@@ -62,27 +58,15 @@ def get_addon_prefs(context):
 
 def draw_batches(context, batches, colors):
     prefs = get_addon_prefs(context)
-    if bpy.app.version < (4, 0, 0):
-        glLineWidth(p.line_thickness)
-        shader_bind()
-        glEnable(GL_BLEND)
+    shader.bind()
+    state.blend_set("ALPHA")
+    state.line_width_set(prefs.line_thickness)
 
-        for draw, col in zip(batches, colors):
-            shader_uniform_float("color", [*col])
-            draw(shader)
+    for draw, col in zip(batches, colors):
+        shader.uniform_float("color", col)
+        draw(shader)
 
-        glDisable(GL_BLEND)
-
-    else:
-        shader_bind()
-        state.blend_set("ALPHA")
-        state.line_width_set(prefs.line_thickness)
-
-        for draw, col in zip(batches, colors):
-            shader_uniform_float("color", [*col])
-            draw(shader)
-
-        state.blend_set("NONE")
+    state.blend_set("NONE")
 
 
 def make_whole_word_pattern(substr):
