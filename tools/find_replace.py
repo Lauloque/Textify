@@ -19,6 +19,7 @@ def get_addon_prefs(context):
 
 
 highlight_icon = textify_icons.get_icon("highlight")
+highlight_id = highlight_icon.icon_id if highlight_icon else 0
 
 
 # ------------------------------------------------------------------------
@@ -136,12 +137,12 @@ class TEXT_OT_find_replace(bpy.types.Operator):
                 selected = text.current_line.body[min(
                     sel_start, sel_end):max(sel_start, sel_end)]
 
-                if prefs.enable_find_set_selected:
+                if getattr(prefs, "enable_find_set_selected", True):
                     wm_textify.find_text = selected
                     bpy.ops.text.find_set_selected()
                     bpy.ops.text.find_previous()
 
-                if prefs.enable_replace_set_selected:
+                if getattr(prefs, "enable_replace_set_selected", True):
                     wm_textify.replace_text = selected
                     bpy.ops.text.replace_set_selected()
 
@@ -172,10 +173,10 @@ class TEXT_OT_find_replace(bpy.types.Operator):
         row.prop(st, "use_find_wrap", text="Wrap Around", toggle=True)
         row.prop(st, "use_find_all", text="All Data-Blocks", toggle=True)
 
-        if prefs.highlight_mode == "FIND_TEXT":
+        if getattr(prefs, "highlight_mode", "") == "FIND_TEXT":
             row.separator()
             row.prop(prefs, "enable_highlight_occurrences", text="",
-                     icon_value=highlight_icon.icon_id, toggle=True)
+                     icon_value=highlight_id, toggle=True)
 
         layout.separator()
 
@@ -189,7 +190,7 @@ class TEXT_OT_find_replace(bpy.types.Operator):
         row.scale_x = 1.1
         sub = row.row(align=True)
 
-        if prefs.auto_activate_find and not st.find_text:
+        if getattr(prefs, "auto_activate_find", False) and not st.find_text:
             sub.activate_init = True
 
         sub.prop(wm_textify, "find_text", text="", icon='VIEWZOOM')
