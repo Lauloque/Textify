@@ -22,7 +22,8 @@ def load_post_handler(dummy):
     # Defer UI sync to ensure UI is fully initialized
     def sync_ui_deferred():
         context = bpy.context
-        if hasattr(context, 'window_manager'):
+        prefs = get_addon_prefs(context)
+        if hasattr(context, 'window_manager') and prefs.show_open_recent_panel:
             sync_ui_list(context)
         return None
 
@@ -74,9 +75,6 @@ class TEXTIFY_UL_recent_files(bpy.types.UIList):
             row.label(text=display_name,
                       icon='WORDWRAP_ON' if exists else 'ERROR')
 
-            if not exists:
-                row.label(text="(Missing)", icon='QUESTION')
-
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.label(text="", icon='FILE_TEXT')
@@ -116,7 +114,8 @@ class RecentFilesManager:
                     if old_dir.exists() and not any(old_dir.iterdir()):
                         old_dir.rmdir()
                 except Exception as e:
-                    print(f"[textify] Warning: Failed to migrate legacy recent file: {e}")
+                    print(
+                        f"[textify] Warning: Failed to migrate legacy recent file: {e}")
 
             self.recent_files_path = txt_path
 
@@ -137,7 +136,8 @@ class RecentFilesManager:
         try:
             self._ensure_loaded()
             if hasattr(self, 'recent_files_path'):
-                self.recent_files_path.parent.mkdir(parents=True, exist_ok=True)
+                self.recent_files_path.parent.mkdir(
+                    parents=True, exist_ok=True)
                 content = "\n".join(self._recent_files)
                 self.recent_files_path.write_text(content, encoding='utf-8')
             else:
@@ -665,7 +665,7 @@ def textify_header(self, context):
     syntax.prop(st, "show_syntax_highlight", text="")
 
     # Jump to line tool
-    if text and prefs.enable_jump_to_line:
+    if text and getattr(prefs, "enable_jump_to_line", True):
         jump_row = layout.row(align=True)
         jump_row.scale_x = 0.9
         jump_row.prop(context.window_manager.jump_to_line_props,
@@ -684,7 +684,7 @@ class TEXTIFY_PT_open_recent(bpy.types.Panel):
     def poll(cls, context):
         prefs = get_addon_prefs(context)
         return (
-            prefs.show_open_recent_panel and
+            getattr(prefs, "show_open_recent_panel", False) and
             context.space_data and
             context.space_data.type == 'TEXT_EDITOR' and
             context.space_data.text is not None
@@ -704,7 +704,7 @@ class TEXTIFY_PT_open_recent(bpy.types.Panel):
             row = layout.row()
             row.template_list("TEXTIFY_UL_recent_files", "",
                               props, "recent_files",
-                              props, "active_index", rows=6)
+                              props, "active_index", rows=10)
 
             # Action buttons
             col = row.column(align=True)
@@ -720,14 +720,21 @@ class TEXTIFY_PT_open_recent(bpy.types.Panel):
 
             col.operator("textify.recent_files_actions", text="",
                          icon='REMOVE').action = 'REMOVE'
+
             col.separator()
             col.operator("textify.recent_files_actions", text="",
                          icon='TRIA_UP').action = 'MOVE_UP'
             col.operator("textify.recent_files_actions", text="",
                          icon='TRIA_DOWN').action = 'MOVE_DOWN'
+
             col.separator()
             col.operator("textify.recent_files_actions", text="",
                          icon='FILE_REFRESH').action = 'REFRESH'
+
+            col.separator()
+            col.operator("textify.clear_recent",
+                         text="", icon='TRASH')
+
             col.separator()
             col.prop(prefs, "show_folder_name", text="", icon='FILTER')
 
@@ -777,9 +784,6 @@ def register():
         # Add load handler
         if load_post_handler not in bpy.app.handlers.load_post:
             bpy.app.handlers.load_post.append(load_post_handler)
-
-        # Load recent files immediately on registration
-        recent_manager.load_recent_files()
 
     except Exception as e:
         print(f"[Register] Error: {e}")
