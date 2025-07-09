@@ -2,7 +2,6 @@ import bpy
 
 
 def get_addon_prefs(context):
-    """Get the addon preferences by searching for the textify addon."""
     for addon_id in context.preferences.addons.keys():
         if 'textify' in addon_id.lower():
             return context.preferences.addons[addon_id].preferences
