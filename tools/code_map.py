@@ -625,7 +625,6 @@ class CODE_MAP_PT_panel(Panel):
     def poll(cls, context):
         prefs = get_addon_prefs(context)
         return (prefs.enable_code_map and
-                prefs.show_code_map_panel and
                 context.space_data and
                 context.space_data.type == 'TEXT_EDITOR' and
                 context.space_data.text is not None)
