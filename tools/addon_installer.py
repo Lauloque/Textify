@@ -1,10 +1,10 @@
 import bpy
 import zipfile
 import tempfile
-from pathlib import Path
-from typing import Optional, Tuple, Dict, Any, Iterator, List
 import re
 import ast
+from pathlib import Path
+from typing import Optional, Tuple, Dict, Any, Iterator, List
 
 
 # -------------------------------------------------------------
@@ -49,8 +49,7 @@ class AddonInfo:
         return (self.name, self.version, self.addon_type, self.root_path)
 
 
-def get_addon_prefs(context) -> Optional[Any]:
-    """Get addon preferences efficiently"""
+def get_addon_prefs(context):
     for addon_id in context.preferences.addons.keys():
         if 'textify' in addon_id.lower():
             return context.preferences.addons[addon_id].preferences
