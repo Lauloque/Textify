@@ -1,7 +1,6 @@
 import bpy
 import json
 import hashlib
-from bpy.types import bpy_prop_array
 from pathlib import Path
 from bpy.types import Operator
 from .keymap import KEYMAP_GROUPS, get_hotkey_entry_item
