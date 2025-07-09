@@ -59,6 +59,16 @@ KEYMAP_GROUPS = [
         ]
     },
     {
+        "label": "Go to Definition",
+        "items": [
+            {
+                "operator": "textify.go_to_definition",
+                "type": "F12", "value": "PRESS",
+                "ctrl": False, "shift": False, "alt": False
+            },
+        ]
+    },
+    {
         "label": "Open Recent",
         "items": [
             {
@@ -83,6 +93,26 @@ KEYMAP_GROUPS = [
                 "properties": {
                     "name": "TEXTIFY_MT_open_recent",
                 }
+            },
+        ]
+    },
+    {
+        "label": "Script Switcher",
+        "items": [
+            {
+                "operator": "textify.cycle_scripts",
+                "type": "TAB", "value": "PRESS",
+                "ctrl": True, "shift": False, "alt": False
+            },
+        ]
+    },
+    {
+        "label": "Script Formatter",
+        "items": [
+            {
+                "operator": "textify.format_script",
+                "type": "F", "value": "PRESS",
+                "ctrl": True, "shift": True, "alt": False
             },
         ]
     },
