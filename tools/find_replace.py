@@ -9,12 +9,9 @@ from .. import textify_icons
 
 
 def get_addon_prefs(context):
-    try:
-        for addon_id in context.preferences.addons.keys():
-            if 'textify' in addon_id.lower():
-                return context.preferences.addons[addon_id].preferences
-    except (AttributeError, KeyError):
-        pass
+    for addon_id in context.preferences.addons.keys():
+        if 'textify' in addon_id.lower():
+            return context.preferences.addons[addon_id].preferences
     return None
 
 
@@ -128,7 +125,6 @@ class TEXT_OT_find_replace(bpy.types.Operator):
     def invoke(self, context, event):
         st = context.space_data
         text = st.text
-        prefs = get_addon_prefs(context)
         wm_textify = context.window_manager.textify
 
         if text:
@@ -137,14 +133,12 @@ class TEXT_OT_find_replace(bpy.types.Operator):
                 selected = text.current_line.body[min(
                     sel_start, sel_end):max(sel_start, sel_end)]
 
-                if getattr(prefs, "enable_find_set_selected", True):
-                    wm_textify.find_text = selected
-                    bpy.ops.text.find_set_selected()
-                    bpy.ops.text.find_previous()
+                wm_textify.find_text = selected
+                bpy.ops.text.find_set_selected()
+                bpy.ops.text.find_previous()
 
-                if getattr(prefs, "enable_replace_set_selected", True):
-                    wm_textify.replace_text = selected
-                    bpy.ops.text.replace_set_selected()
+                wm_textify.replace_text = selected
+                bpy.ops.text.replace_set_selected()
 
         width = 430 if max(len(wm_textify.find_text), len(
             wm_textify.replace_text)) > 54 else 360
@@ -239,46 +233,40 @@ class TEXT_OT_find_replace(bpy.types.Operator):
 # ------------------------------------------------------------------------
 
 
-class TEXT_PT_find(bpy.types.Panel):
-    bl_space_type = 'TEXT_EDITOR'
-    bl_region_type = 'UI'
-    bl_category = "Text"
-    bl_label = "Find & Replace"
+def textify_find_replace_draw(self, context):
+    layout = self.layout
+    st = context.space_data
 
-    def draw(self, context):
-        layout = self.layout
-        st = context.space_data
+    layout.active = bool(st.text)
 
-        layout.active = bool(st.text)
+    col = layout.column()
+    row = col.row(align=True)
+    row.prop(st, "find_text", text="", icon='VIEWZOOM')
+    row.operator("text.find_set_selected", text="", icon='EYEDROPPER')
 
-        col = layout.column()
-        row = col.row(align=True)
-        row.prop(st, "find_text", text="", icon='VIEWZOOM')
-        row.operator("text.find_set_selected", text="", icon='EYEDROPPER')
+    row = col.row(align=True)
+    row.operator("text.find")
+    row.operator("text.find_previous")
 
-        row = col.row(align=True)
-        row.operator("text.find")
-        row.operator("text.find_previous")
+    layout.separator()
+    col = layout.column()
+    row = col.row(align=True)
+    row.prop(st, "replace_text", text="", icon='DECORATE_OVERRIDE')
+    row.operator("text.replace_set_selected", text="", icon='EYEDROPPER')
 
-        layout.separator()
-        col = layout.column()
-        row = col.row(align=True)
-        row.prop(st, "replace_text", text="", icon='DECORATE_OVERRIDE')
-        row.operator("text.replace_set_selected", text="", icon='EYEDROPPER')
+    row = col.row(align=True)
+    row.operator("text.replace")
+    row.operator("text.replace", text="Replace All").all = True
 
-        row = col.row(align=True)
-        row.operator("text.replace")
-        row.operator("text.replace", text="Replace All").all = True
-
-        layout.separator()
-        layout.use_property_split = True
-        col = layout.column(heading="Search")
-        col.active = bool(st.text)
-        col.prop(st, "use_match_case", text="Match Case",
-                 text_ctxt=i18n_contexts.id_text)
-        col.prop(st, "use_find_wrap", text="Wrap Around",
-                 text_ctxt=i18n_contexts.id_text)
-        col.prop(st, "use_find_all", text="All Data-Blocks")
+    layout.separator()
+    layout.use_property_split = True
+    col = layout.column(heading="Search")
+    col.active = bool(st.text)
+    col.prop(st, "use_match_case", text="Match Case",
+             text_ctxt=i18n_contexts.id_text)
+    col.prop(st, "use_find_wrap", text="Wrap Around",
+             text_ctxt=i18n_contexts.id_text)
+    col.prop(st, "use_find_all", text="All Data-Blocks")
 
 
 # ------------------------------------------------------------------------
@@ -296,17 +284,21 @@ def draw_func(self, context):
 # ------------------------------------------------------------------------
 
 
+original_text_pt_find_draw = bpy.types.TEXT_PT_find.draw
+
+
 classes = [
     FIND_REPLACE_PG_properties,
     TEXT_OT_find_previous,
     TEXT_OT_find_replace,
-    TEXT_PT_find
 ]
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    bpy.types.TEXT_PT_find.draw = textify_find_replace_draw
 
     bpy.types.TEXT_MT_edit.append(draw_func)
     bpy.types.WindowManager.textify = bpy.props.PointerProperty(
@@ -320,9 +312,4 @@ def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
-    try:
-        import bl_ui.space_text
-        import importlib
-        importlib.reload(bl_ui.space_text)
-    except Exception as e:
-        print(f"Error reloading space_text module: {e}")
+    bpy.types.TEXT_PT_find.draw = original_text_pt_find_draw
