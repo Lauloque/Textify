@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import StringProperty, EnumProperty, IntProperty, CollectionProperty
-from bpy.types import PropertyGroup, Operator, Panel, UIList, Menu
+from bpy.types import PropertyGroup, Operator, Panel, UIList
 
 
 # -------------------------------------------------------------
@@ -9,10 +9,6 @@ from bpy.types import PropertyGroup, Operator, Panel, UIList, Menu
 
 
 def get_addon_prefs(context):
-    """
-    Get the addon preferences by searching for the textify addon.
-    Returns the preferences object or None if not found.
-    """
     for addon_id in context.preferences.addons.keys():
         if 'textify' in addon_id.lower():
             return context.preferences.addons[addon_id].preferences
@@ -79,6 +75,7 @@ class BOOKMARK_LINE_OT_manage(Operator):
     @classmethod
     def poll(cls, context):
         prefs = get_addon_prefs(context)
+
         return (
             getattr(prefs, "enable_bookmark_line", False) and
             context.space_data and
@@ -279,7 +276,6 @@ class BOOKMARK_LINE_PT_Panel(Panel):
         prefs = get_addon_prefs(context)
         return (
             getattr(prefs, "enable_bookmark_line", False) and
-            getattr(prefs, "show_bookmark_line_panel", False) and
             context.space_data and
             context.space_data.type == 'TEXT_EDITOR' and
             context.space_data.text is not None
@@ -305,11 +301,14 @@ classes = (
 
 
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
+    try:
+        for cls in classes:
+            bpy.utils.register_class(cls)
 
-    bpy.types.Text.bookmark_settings = bpy.props.PointerProperty(
-        type=BookmarkSettings)
+        bpy.types.Text.bookmark_settings = bpy.props.PointerProperty(
+            type=BookmarkSettings)
+    except Exception as e:
+        print(f"Error unregistering class {getattr(cls, '__name__', cls)}: {e}")
 
 
 def unregister():
