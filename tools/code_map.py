@@ -15,13 +15,9 @@ MAX_PREVIEW_LENGTH = 50
 
 
 def get_addon_prefs(context):
-    """Get addon preferences safely"""
-    try:
-        for addon_id in context.preferences.addons.keys():
-            if 'textify' in addon_id.lower():
-                return context.preferences.addons[addon_id].preferences
-    except (AttributeError, KeyError):
-        pass
+    for addon_id in context.preferences.addons.keys():
+        if 'textify' in addon_id.lower():
+            return context.preferences.addons[addon_id].preferences
     return None
 
 
