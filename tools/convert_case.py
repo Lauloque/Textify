@@ -91,8 +91,6 @@ class TEXTIFY_MT_change_case_menu(bpy.types.Menu):
 
     def draw(self, context):
         layout = self.layout
-        space = context.space_data
-        text = getattr(space, "text", None)
 
         cases = [
             ('UPPERCASE', "UPPER CASE"),
