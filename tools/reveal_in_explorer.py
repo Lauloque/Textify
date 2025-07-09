@@ -63,7 +63,7 @@ def draw_footer_menu(self, context):
     text = context.space_data.text
     prefs = get_addon_prefs(context)
 
-    if text and text.filepath and getattr(prefs, "enable_open_script_folder", False):
+    if text and text.filepath:
         if getattr(prefs, "enable_character_count", False):
             layout.separator(type='LINE')
         else:
