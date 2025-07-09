@@ -4,7 +4,7 @@ id = "textify"
 version = "1.7.0"
 name = "Textify"
 tagline = "Streamline and Enhance Blender’s Text Editor"
-maintainer = "Jishnu jithu <jishnukv661@gmail.com>"
+maintainer = "Jishnu, kaio <jishnukv661@gmail.com>"
 type = "add-on"
 
 website = "https://github.com/DesignLipsx/Textify/"
@@ -18,7 +18,7 @@ license = [
 ]
 
 copyright = [
-  "2024 Jishnu Jithu",
+  "2025 Jishnu Jithu",
 ]
 
 wheels = [
@@ -29,4 +29,4 @@ wheels = [
 [permissions]
 network = "Download and install Python modules for script formatting"
 files = "Read/write settings, and manage scripts on disk"
-clipboard = "Copy class bl_idname and other identifiers from the Code Map to the clipboard"
+clipboard = "Copy class bl_idname and identifiers to clipboard"
