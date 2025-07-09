@@ -1,10 +1,9 @@
 import bpy
-import json
 import shutil
 
 from pathlib import Path
 from bpy.app.handlers import persistent
-from bpy.props import StringProperty, CollectionProperty, IntProperty, BoolProperty, EnumProperty, PointerProperty
+from bpy.props import StringProperty, CollectionProperty, IntProperty, EnumProperty, PointerProperty
 from bpy.types import Operator, Menu, PropertyGroup
 
 
@@ -58,7 +57,6 @@ class TEXTIFY_PG_Properties(PropertyGroup):
 
 class TEXTIFY_UL_recent_files(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        props = context.window_manager.recent_files_props
         prefs = get_addon_prefs(context)
         filepath = Path(item.filepath)
         exists = filepath.exists()
@@ -617,6 +615,7 @@ def textify_menu(self, context):
 
 def textify_header(self, context):
     layout = self.layout
+    wm = context.window_manager
     st = context.space_data
     text = st.text
     is_syntax_highlight_supported = st.is_syntax_highlight_supported()
@@ -665,10 +664,10 @@ def textify_header(self, context):
     syntax.prop(st, "show_syntax_highlight", text="")
 
     # Jump to line tool
-    if text and getattr(prefs, "enable_jump_to_line", True):
+    if hasattr(wm, "jump_to_line_props") and getattr(prefs, "enable_jump_to_line", True):
         jump_row = layout.row(align=True)
         jump_row.scale_x = 0.9
-        jump_row.prop(context.window_manager.jump_to_line_props,
+        jump_row.prop(wm.jump_to_line_props,
                       "line_number", text="Line")
 
 
@@ -694,7 +693,7 @@ class TEXTIFY_PT_open_recent(bpy.types.Panel):
         layout = self.layout
         text = context.space_data.text
         props = context.window_manager.recent_files_props
-        prefs = get_addon_prefs(bpy.context)
+        prefs = get_addon_prefs(context)
 
         # Ensure recent files are loaded
         recent_files = recent_manager.get_all_files()
