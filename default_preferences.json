@@ -4,76 +4,51 @@
         "code_map_category": "Code Map",
         "open_recent_category": "Text",
         "enable_addon_installer": true,
-        "enable_script_formatter": true,
         "enable_bookmark_line": true,
         "enable_case_convert": true,
         "enable_character_count": true,
         "enable_code_map": true,
-        "enable_find_replace": true,
-        "enable_highlight_occurrences": true,
+        "enable_go_to_definition": true,
+        "enable_highlight_occurrences": false,
         "enable_jump_to_line": true,
-        "enable_open_script_folder": true,
+        "enable_script_formatter": true,
         "enable_trim_whitespace": true,
         "zip_name_style": "NAME_DASH_VERSION",
-        "addon_installer_popup_width": 400,
-        "show_bookmark_line_panel": true,
+        "addon_installer_popup_width": 380,
         "auto_activate_search": false,
         "show_code_filters": true,
-        "show_code_map_panel": true,
         "code_map_popup_width": 320,
-        "enable_find_set_selected": true,
-        "enable_replace_set_selected": true,
         "auto_activate_find": false,
         "highlight_mode": "FIND_TEXT",
+        "case_sensitive": false,
+        "show_in_scroll": true,
         "col_preset": "BLUE",
-        "line_thickness": 1,
-        "min_str_len": 2,
-        "font_size_comp": 0,
-        "col_bg": [
-            0.25,
-            0.33000001311302185,
-            0.44999998807907104,
-            1.0
+        "highlight_color": [
+            0.0,
+            0.4000000059604645,
+            0.800000011920929,
+            0.30000001192092896
         ],
-        "col_line": [
-            0.18000000715255737,
-            0.4399999976158142,
-            0.6100000143051147,
-            1.0
-        ],
-        "fg_col": [
+        "text_color": [
             1.0,
             1.0,
             1.0,
-            1.0
+            0.699999988079071
         ],
-        "col_scroll": [
+        "scroll_color": [
             0.14000000059604645,
             0.6000000238418579,
             1.0,
             0.550000011920929
         ],
-        "draw_type": "SOLID",
         "scroll_horiz_pos": 0.0,
         "scroll_marker_length": 6.0,
-        "col_scroll_selected": [
-            1.0,
-            0.5,
-            0.0,
-            1.0
-        ],
-        "recent_data_path": "C:\\Users\\Jithu\\AppData\\Roaming\\Blender Foundation\\Blender\\4.3\\scripts",
+        "recent_data_path": "C:\\Users\\Jithu\\AppData\\Roaming\\Blender Foundation\\Blender\\4.3\\config",
         "show_open_recent_panel": true,
         "show_folder_name": true,
         "max_entries": 30,
-        "expand_addon_installer": false,
-        "expand_script_formatter": false,
-        "expand_bookmark": false,
-        "expand_code_map": false,
-        "expand_find_replace": false,
         "expand_highlight_occurrences": false,
-        "expand_open_recent": false,
-        "expand_category": false
+        "expand_script_formatter": false
     },
     "keymap": [
         {
@@ -153,6 +128,19 @@
             ]
         },
         {
+            "label": "Go to Definition",
+            "items": [
+                {
+                    "operator": "textify.go_to_definition",
+                    "type": "F12",
+                    "value": "PRESS",
+                    "ctrl": 0,
+                    "shift": 0,
+                    "alt": 0
+                }
+            ]
+        },
+        {
             "label": "Open Recent",
             "items": [
                 {
@@ -174,6 +162,43 @@
                 {
                     "operator": "textify.save_as",
                     "type": "S",
+                    "value": "PRESS",
+                    "ctrl": 1,
+                    "shift": 1,
+                    "alt": 0
+                },
+                {
+                    "operator": "wm.call_menu",
+                    "type": "O",
+                    "value": "PRESS",
+                    "ctrl": 1,
+                    "shift": 0,
+                    "alt": 1,
+                    "properties": {
+                        "name": "TEXTIFY_MT_open_recent"
+                    }
+                }
+            ]
+        },
+        {
+            "label": "Script Switcher",
+            "items": [
+                {
+                    "operator": "textify.cycle_scripts",
+                    "type": "TAB",
+                    "value": "PRESS",
+                    "ctrl": 1,
+                    "shift": 0,
+                    "alt": 0
+                }
+            ]
+        },
+        {
+            "label": "Script Formatter",
+            "items": [
+                {
+                    "operator": "textify.format_script",
+                    "type": "F",
                     "value": "PRESS",
                     "ctrl": 1,
                     "shift": 1,
