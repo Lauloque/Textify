@@ -739,7 +739,7 @@ def draw_menu(self, context):
 
         layout = self.layout
         layout.separator()
-        layout.operator("textify.install_addon_popup", text=label)
+        layout.operator("textify.install_addon_popup", text=label, icon='IMPORT')
 
 
 # -------------------------------------------------------------

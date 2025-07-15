@@ -58,6 +58,7 @@ class CodePatterns:
             self.CLASS_PATTERN = re.compile(r'^\s*class\s+(\w+)\s*[\(:]')
             self.FUNCTION_PATTERN = re.compile(r'^\s*def\s+(\w+)\s*\(')
             self.PROPERTY_PATTERN = re.compile(r'^\s*([\w]+)\s*:\s*[\w\[\]]+')
+            self.BLENDER_PROPERTY_PATTERN = re.compile(r'^\s*(\w+)\s*:\s*\w*Property\s*\(')
             self.VARIABLE_PATTERN = re.compile(
                 r'^\s*([A-Z_][A-Z0-9_]*|[a-zA-Z_]\w*)\s*=\s*')
             self.CONSTANT_PATTERN = re.compile(r'^\s*([A-Z_][A-Z0-9_]*)\s*=')
@@ -238,7 +239,12 @@ class CodeAnalyzer:
                 'class', 'function'} else 'function'
             return CodeItem(m.group(1), kind, line_num, indent)
 
-        # Property parsing
+        # Property parsing - Check for Blender properties first
+        m = self.patterns.BLENDER_PROPERTY_PATTERN.match(line)
+        if m:
+            return CodeItem(m.group(1), 'property', line_num, indent)
+
+        # Standard property parsing (type annotations)
         m = self.patterns.PROPERTY_PATTERN.match(line)
         if m and ':' in line and not line.startswith('#') and '=' not in line:
             return CodeItem(m.group(1), 'property', line_num, indent)
@@ -329,7 +335,6 @@ class CODE_MAP_OT_jump_to_line(Operator):
 
     def invoke(self, context, event):
         clipboard_helper = ClipboardHelper()
-
         if event.ctrl:
             if self.item_type == 'class' and self.item_bl_idname:
                 clipboard_helper.copy_to_clipboard(self.item_bl_idname)
@@ -362,27 +367,63 @@ class CODE_MAP_OT_jump_to_line(Operator):
         if not text:
             return
 
+        # Jump to the starting line
         bpy.ops.text.jump(line=self.line_number)
         bpy.ops.text.move(type='LINE_BEGIN')
 
         start_line_index = self.line_number - 1
-        end_line_index = min(self.item_end_line - 1, len(text.lines) - 1)
+        end_line_index = self.item_end_line - 1 if self.item_end_line else start_line_index
 
+        # If no end line was provided, try to find the end of the block automatically
+        if not self.item_end_line:
+            start_line = text.lines[start_line_index].body
+            # Check for opening brackets
+            if '{' in start_line or '[' in start_line:
+                open_char = '{' if '{' in start_line else '['
+                close_char = '}' if open_char == '{' else ']'
+                open_count = start_line.count(open_char) - start_line.count(close_char)
+
+                # Search forward for matching closing bracket
+                end_line_index = start_line_index
+                while end_line_index < len(text.lines) and open_count > 0:
+                    end_line_index += 1
+                    if end_line_index < len(text.lines):
+                        line = text.lines[end_line_index].body
+                        open_count += line.count(open_char) - line.count(close_char)
+
+                # If we found a matching closing bracket, use that as the end
+                if open_count == 0 and end_line_index < len(text.lines):
+                    self.item_end_line = end_line_index + 1
+                else:
+                    end_line_index = start_line_index
+
+        # Clamp the end line index to valid range
+        end_line_index = min(end_line_index, len(text.lines) - 1)
+
+        # Find the actual last non-empty line in the block
+        actual_end_line = end_line_index
+        while actual_end_line > start_line_index:
+            line_content = text.lines[actual_end_line].body.strip()
+            if line_content:  # Found non-empty line
+                break
+            actual_end_line -= 1
+
+        # Calculate selection columns
         if start_line_index < len(text.lines):
             start_line_body = text.lines[start_line_index].body
             start_column = len(start_line_body) - len(start_line_body.lstrip())
         else:
             start_column = 0
 
-        end_column = len(text.lines[end_line_index].body) if end_line_index < len(
-            text.lines) else 0
+        end_column = len(text.lines[actual_end_line].body) if actual_end_line < len(text.lines) else 0
 
-        if self.line_number == self.item_end_line:
-            text.select_set(start_line_index, start_column, start_line_index, len(
-                text.lines[start_line_index].body))
+        # Set the selection
+        if start_line_index == actual_end_line:
+            text.select_set(start_line_index, start_column,
+                            start_line_index, len(text.lines[start_line_index].body))
         else:
             text.select_set(start_line_index, start_column,
-                            end_line_index, end_column)
+                            actual_end_line, end_column)
 
         context.area.tag_redraw()
 
@@ -494,8 +535,7 @@ class CodeRenderer:
 
         # Icon + operator
         icon_name = 'constant' if item.item_type == 'constant' else item.item_type
-        icon = textify_icons.get_icon(icon_name)
-        icon_id = icon.icon_id if icon else 0
+        icon_id = textify_icons.get_icon(icon_name) or 0
         sub = row.row(align=True)
         sub.alignment = 'LEFT'
 
@@ -582,8 +622,9 @@ class CodeRenderer:
                  "show_properties", "show_variables", "show_constants"]
 
         for prop, icon_name in zip(props, icons):
-            icon = textify_icons.get_icon(icon_name)
-            icon_id = icon.icon_id if icon else 0
+            icon_id = textify_icons.get_icon(icon_name)
+            if icon_id is None:
+                icon_id = 0
             row.prop(nav_data, prop, toggle=True, text="", icon_value=icon_id)
 
 

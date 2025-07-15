@@ -1,6 +1,4 @@
 import bpy
-import subprocess
-import sys
 
 
 def get_addon_prefs(context):
@@ -8,67 +6,6 @@ def get_addon_prefs(context):
         if 'textify' in addon_id.lower():
             return context.preferences.addons[addon_id].preferences
     return None
-
-
-def install_modules(modules):
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "ensurepip"],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install",
-                "--upgrade", "pip", "--no-warn-script-location"],
-            check=True
-        )
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install",
-                "--no-warn-script-location", *modules],
-            check=True
-        )
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"[Installer Error] {e}")
-        return False
-
-
-class TEXT_OT_install_formatter_deps(bpy.types.Operator):
-    bl_idname = "text.install_formatter_deps"
-    bl_label = "Install Formatter Dependencies"
-    bl_description = "Install selected formatter dependencies using pip"
-
-    install_autopep8: bpy.props.BoolProperty(name="autopep8", default=True)
-    install_pycodestyle: bpy.props.BoolProperty(
-        name="pycodestyle", default=True)
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self, width=300)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Select modules to install:")
-        layout.prop(self, "install_autopep8")
-        layout.prop(self, "install_pycodestyle")
-
-    def execute(self, context):
-        modules = []
-        if self.install_autopep8:
-            modules.append("autopep8")
-        if self.install_pycodestyle:
-            modules.append("pycodestyle")
-
-        if not modules:
-            self.report({'WARNING'}, "No modules selected.")
-            return {'CANCELLED'}
-
-        success = install_modules(modules)
-        if success:
-            self.report({'INFO'}, f"Installed: {', '.join(modules)}")
-        else:
-            self.report({'ERROR'}, "Module installation failed.")
-        return {'FINISHED'}
 
 
 class TEXTIFY_OT_format_autopep8(bpy.types.Operator):
@@ -175,7 +112,6 @@ def menu_func(self, context):
 
 
 classes = (
-    TEXT_OT_install_formatter_deps,
     TEXTIFY_OT_format_autopep8,
 )
 

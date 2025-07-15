@@ -208,3 +208,11 @@ def unregister_keymap():
     for km, kmi in keys:
         km.keymap_items.remove(kmi)
     keys.clear()
+
+
+def register():
+    register_keymap()
+
+
+def unregister():
+    unregister_keymap()

@@ -29,9 +29,8 @@ if "bpy" in locals():
     for mod in [tools, ops, keymap, textify_icons]:
         importlib.reload(mod)
 
-github_icon = textify_icons.get_icon("github")
-discord_icon = textify_icons.get_icon("discord")
-highlight_icon = textify_icons.get_icon("highlight")
+from .textify_icons import get_icon
+
 
 # Configuration data
 FEATURE_PROPS = {
@@ -40,7 +39,6 @@ FEATURE_PROPS = {
     "Case Converter": ("enable_case_convert", "Convert selected text to different cases such as snake_case, camelCase, PascalCase, etc.\n\nLocation: Text Editor Header > Format Menu > Convert Case To"),
     "Character Count": ("enable_character_count", "Displays total character count, and current line and column number of the cursor.\n\nLocation: Text Editor Footer"),
     "Code Map": ("enable_code_map", "Code Map is a code navigation tool to explore and jump between classes, functions, variables, and properties.\n\nLocation: Text Editor Sidebar > Code Map.\nShortcut: ` (Backtick)"),
-    "Find & Replace": ("enable_find_replace", "Improved find with find previous and total match count.\n\nLocation: Text Editor Sidebar > Text > Find & Replace.\nShortcut: F1"),
     "Go to Definition": ("enable_go_to_definition", "Go to the definition of a function, class, or variable.\n\nLocation: Right-click menu in Text Editor.\nShortcut: Customizable"),
     "Highlight Occurrences": ("enable_highlight_occurrences", "Highlights all matches of the selected text."),
     "Jump to Line": ("enable_jump_to_line", "Jump to a specific line directly from the text editor header.\n\nClick and drag the slider to scrub through the lines."),
@@ -65,29 +63,6 @@ PANEL_CLASSES = [
 
 
 # Utility functions
-def auto_restore_prefs():
-    prefs = bpy.context.preferences.addons[__package__].preferences
-    backup_path = Path(bpy.path.abspath(prefs.backup_filepath))
-    filepath = backup_path / "preferences_backup.json"
-
-    if filepath.exists() and not prefs.settings_restored:
-        try:
-            bpy.ops.textify.restore_preferences()
-            prefs.settings_restored = True
-            print("Textify: Preferences auto-restored successfully")
-        except Exception as e:
-            print(f"Textify: Failed to auto-restore preferences: {e}")
-    return None
-
-
-def is_module_installed(name):
-    try:
-        __import__(name)
-        return True
-    except ImportError:
-        return False
-
-
 def draw_expand_box(layout, prop_name, label, prefs, draw_func=None):
     box = layout.box()
     row = box.row()
@@ -139,60 +114,148 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
 
     # Category properties
     bookmark_line_category: StringProperty(
-        name="Bookmark Line", description="Category to show Bookmark Line panel", default="Bookmark Line", update=update_sidebar_category)
+        name="Bookmark Line",
+        description="Category to show Bookmark Line panel",
+        default="Bookmark Line",
+        update=update_sidebar_category
+    )
     code_map_category: StringProperty(
-        name="Code Map", description="Category to show Code Map panel", default="Code Map", update=update_sidebar_category)
+        name="Code Map",
+        description="Category to show Code Map panel",
+        default="Code Map",
+        update=update_sidebar_category
+    )
     open_recent_category: StringProperty(
-        name="Open Recent", description="Category to show Open Recent panel", default="Text", update=update_sidebar_category)
+        name="Open Recent",
+        description="Category to show Open Recent panel",
+        default="Text",
+        update=update_sidebar_category
+    )
 
     # Feature enable properties
-    enable_addon_installer: BoolProperty(name="Enable Addon Installer",
-                                         description=FEATURE_PROPS["Addon Installer"][1], default=True)
-    enable_bookmark_line: BoolProperty(name="Enable Bookmark Line",
-                                       description=FEATURE_PROPS["Bookmark Line"][1], default=True)
-    enable_case_convert: BoolProperty(name="Enable Case Converter",
-                                      description=FEATURE_PROPS["Case Converter"][1], default=True)
-    enable_character_count: BoolProperty(name="Enable Character Count",
-                                         description=FEATURE_PROPS["Character Count"][1], default=True)
-    enable_code_map: BoolProperty(name="Enable Code Map", description=FEATURE_PROPS["Code Map"][1], default=True)
-    enable_find_replace: BoolProperty(name="Enable Find & Replace",
-                                      description=FEATURE_PROPS["Find & Replace"][1], default=True)
-    enable_go_to_definition: BoolProperty(name="Enable Go to Definition",
-                                          description=FEATURE_PROPS["Go to Definition"][1], default=True)
+    enable_addon_installer: BoolProperty(
+        name="Enable Addon Installer",
+        description=FEATURE_PROPS["Addon Installer"][1],
+        default=True
+    )
+    enable_bookmark_line: BoolProperty(
+        name="Enable Bookmark Line",
+        description=FEATURE_PROPS["Bookmark Line"][1],
+        default=True
+    )
+    enable_case_convert: BoolProperty(
+        name="Enable Case Converter",
+        description=FEATURE_PROPS["Case Converter"][1],
+        default=True
+    )
+    enable_character_count: BoolProperty(
+        name="Enable Character Count",
+        description=FEATURE_PROPS["Character Count"][1],
+        default=True
+    )
+    enable_code_map: BoolProperty(
+        name="Enable Code Map",
+        description=FEATURE_PROPS["Code Map"][1],
+        default=True
+    )
+    enable_go_to_definition: BoolProperty(
+        name="Enable Go to Definition",
+        description=FEATURE_PROPS["Go to Definition"][1],
+        default=True
+    )
     enable_highlight_occurrences: BoolProperty(
-        name="Enable Highlight Occurrences", description=FEATURE_PROPS["Highlight Occurrences"][1], default=False, update=highlight_occurrences.update_highlight)
-    enable_jump_to_line: BoolProperty(name="Enable Jump to Line",
-                                      description=FEATURE_PROPS["Jump to Line"][1], default=True)
-    enable_script_formatter: BoolProperty(name="Enable Script Formatter",
-                                          description=FEATURE_PROPS["Script Formatter"][1], default=True)
-    enable_trim_whitespace: BoolProperty(name="Enable Trim Whitespace",
-                                         description=FEATURE_PROPS["Trim Whitespace"][1], default=True)
+        name="Enable Highlight Occurrences",
+        description=FEATURE_PROPS["Highlight Occurrences"][1],
+        default=False,
+        update=highlight_occurrences.update_highlight
+    )
+    enable_jump_to_line: BoolProperty(
+        name="Enable Jump to Line",
+        description=FEATURE_PROPS["Jump to Line"][1],
+        default=True
+    )
+    enable_script_formatter: BoolProperty(
+        name="Enable Script Formatter",
+        description=FEATURE_PROPS["Script Formatter"][1],
+        default=True
+    )
+    enable_trim_whitespace: BoolProperty(
+        name="Enable Trim Whitespace",
+        description=FEATURE_PROPS["Trim Whitespace"][1],
+        default=True
+    )
 
     # Settings properties
     zip_name_style: EnumProperty(
-        name="Zip Name Style", description="Choose how the addon zip file is named.",
-        items=[('NAME_ONLY', "Name Only", "Example: my_addon.zip"), ('NAME_UNDERSCORE_VERSION', "Name_Version",
-                                                                     "Example: my_addon_1.0.zip"), ('NAME_DASH_VERSION', "Name-Version", "Example: my_addon-1.0.zip")],
+        name="Zip Name Style",
+        description="Choose how the addon zip file is named.",
+        items=[
+            ('NAME_ONLY', "Name Only", "Example: my_addon.zip"),
+            ('NAME_UNDERSCORE_VERSION', "Name_Version", "Example: my_addon_1.0.zip"),
+            ('NAME_DASH_VERSION', "Name-Version", "Example: my_addon-1.0.zip")
+        ],
         default='NAME_DASH_VERSION'
     )
     addon_installer_popup_width: IntProperty(
-        name="Popup Width", description="Adjust the width of the Addon Installer popup dialog", default=380, min=200, max=800, step=10, subtype='PIXEL')
+        name="Popup Width",
+        description="Adjust the width of the Addon Installer popup dialog",
+        default=380,
+        min=200,
+        max=800,
+        step=10,
+        subtype='PIXEL'
+    )
 
     auto_activate_search: BoolProperty(
-        name="Auto Activate Search", description="Enable or disable auto-activation of search when invoking popup", default=False)
-    show_code_filters: BoolProperty(name="Show Code Filters in Panel",
-                                    description="Toggle to display the code components in the Code Map panel and popup", default=True)
-    code_map_popup_width: IntProperty(name="Popup Width", description="Adjust the width of the Code Map popup dialog",
-                                      default=320, min=250, max=600, step=10, subtype='PIXEL')
+        name="Auto Activate Search",
+        description="Enable or disable auto-activation of search when invoking popup",
+        default=False
+    )
+    show_code_filters: BoolProperty(
+        name="Show Code Filters in Panel",
+        description="Toggle to display the code components in the Code Map panel and popup",
+        default=True
+    )
+    code_map_popup_width: IntProperty(
+        name="Popup Width",
+        description="Adjust the width of the Code Map popup dialog",
+        default=320,
+        min=250,
+        max=600,
+        step=10,
+        subtype='PIXEL'
+    )
 
     auto_activate_find: BoolProperty(
-        name="Auto Activate Find", description="Enable or disable auto-activation of find field when invoking popup", default=False)
+        name="Auto Activate Find",
+        description="Enable or disable auto-activation of find field when invoking popup",
+        default=False
+    )
+    use_textify_find_replace: BoolProperty(
+        name="Use Textify Find & Replace",
+        description="Enable or disable the custom Textify Find & Replace button in the UI",
+        default=True
+    )
+    realtime_search: BoolProperty(
+        name="Real-Time Highlighting",
+        description="Enable/Disable real-time search while typing",
+        default=True
+    )
+    enable_find_on_enter: bpy.props.BoolProperty(
+        name="Enable Find on Enter",
+        description="Enable running find search automatically when pressing Enter (for non-realtime input)",
+        default=True
+    )
 
     highlight_mode: EnumProperty(
         name="Highlight Mode",
-        items=[('AUTO', "Auto", "Use selection if no find text is given"), ('SELECTION', "Selection",
-                                                                            "Only highlight selected text"), ('FIND_TEXT', "Find Text", "Only highlight find text")],
-        default='FIND_TEXT', update=highlight_occurrences.update_highlight
+        items=[
+            ('AUTO', "Auto", "Use selection if no find text is given"),
+            ('SELECTION', "Selection", "Only highlight selected text"),
+            ('FIND_TEXT', "Find Text", "Only highlight find text")
+        ],
+        default='FIND_TEXT',
+        update=highlight_occurrences.update_highlight
     )
 
     def update_colors(self, context):
@@ -204,47 +267,125 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
             self.scroll_color = scroll
 
     case_sensitive: BoolProperty(
-        name="Case Sensitive", description="Match case when searching for occurrences", default=False)
-    show_in_scroll: BoolProperty(name="Show in Scrollbar", description="Show markers in scrollbar", default=True)
+        name="Case Sensitive",
+        description="Match case when searching for occurrences",
+        default=False
+    )
+    show_in_scroll: BoolProperty(
+        name="Show in Scrollbar",
+        description="Show markers in scrollbar",
+        default=True
+    )
     col_preset: EnumProperty(
-        name="Color Preset", description="Highlight color presets",
-        items=[("BLUE", "Blue", "", 1), ("RED", "Red", "", 2), ("GREEN", "Green", "", 3), ("YELLOW", "Yellow",
-                                                                                           "", 4), ("ORANGE", "Orange", "", 5), ("GRAY", "Gray", "", 6), ("CUSTOM", "Custom", "", 7)],
-        update=update_colors, default="BLUE"
+        name="Color Preset",
+        description="Highlight color presets",
+        items=[
+            ("BLUE", "Blue", "", 1),
+            ("RED", "Red", "", 2),
+            ("GREEN", "Green", "", 3),
+            ("YELLOW", "Yellow", "", 4),
+            ("ORANGE", "Orange", "", 5),
+            ("GRAY", "Gray", "", 6),
+            ("CUSTOM", "Custom", "", 7)
+        ],
+        update=update_colors,
+        default="BLUE"
     )
 
     # Color properties
-    highlight_color: FloatVectorProperty(name="Highlight Color", description="Color of the highlight background",
-                                         subtype='COLOR', size=4, default=(0.25, 0.33, 0.45, .07), min=0.0, max=1.0)
-    text_color: FloatVectorProperty(name="Text Color", description="Color of the highlighted text",
-                                    subtype='COLOR', size=4, default=(1.0, 1.0, 1.0, 1.0), min=0.0, max=1.0)
-    scroll_color: FloatVectorProperty(name="Scrollbar Color", description="Color of scrollbar markers",
-                                      subtype='COLOR', size=4, default=(0.14, .6, 1, .5), min=0.0, max=1.0)
-    scroll_horiz_pos: FloatProperty(name="Horizontal Offset",
-                                    description="Scrollbar markers horizontal offset", default=0.0, min=0.0, max=10.0)
+    highlight_color: FloatVectorProperty(
+        name="Highlight Color",
+        description="Color of the highlight background",
+        subtype='COLOR',
+        size=4,
+        default=(0.25, 0.33, 0.45, .07),
+        min=0.0,
+        max=1.0
+    )
+    text_color: FloatVectorProperty(
+        name="Text Color",
+        description="Color of the highlighted text",
+        subtype='COLOR',
+        size=4,
+        default=(1.0, 1.0, 1.0, 1.0),
+        min=0.0,
+        max=1.0
+    )
+    scroll_color: FloatVectorProperty(
+        name="Scrollbar Color",
+        description="Color of scrollbar markers",
+        subtype='COLOR',
+        size=4,
+        default=(0.14, .6, 1, .5),
+        min=0.0,
+        max=1.0
+    )
+    scroll_horiz_pos: FloatProperty(
+        name="Horizontal Offset",
+        description="Scrollbar markers horizontal offset",
+        default=0.0,
+        min=0.0,
+        max=10.0
+    )
     scroll_marker_length: FloatProperty(
-        name="Marker Length", description="Scrollbar markers length", default=6.0, min=1.0, max=100.0)
+        name="Marker Length",
+        description="Scrollbar markers length",
+        default=6.0,
+        min=1.0,
+        max=100.0
+    )
 
     # File settings
-    recent_data_path: StringProperty(name="Recent File Data Path", description="Directory to store recent file history",
-                                     subtype='DIR_PATH', default=bpy.utils.user_resource('CONFIG'))
-    show_open_recent_panel: BoolProperty(name="Show Open Recent Panel",
-                                         description="Show or hide the Open Recent panel", default=True)
-    show_folder_name: BoolProperty(name="Show Folder Name for '__init__.py'",
-                                   description="Displays the folder name for '__init__.py' files instead of the file name itself", default=True)
-    max_entries: IntProperty(name="Max Recent Files",
-                             description="Maximum number of recent files to keep", default=30, min=3, max=50)
-    backup_filepath: StringProperty(name="Backup Filepath", subtype='FILE_PATH',
-                                    default=str(Path.home() / "Documents" / "textify"))
+    recent_data_path: StringProperty(
+        name="Recent File Data Path",
+        description="Directory to store recent file history",
+        subtype='DIR_PATH',
+        default=bpy.utils.user_resource('CONFIG')
+    )
+    show_open_recent_panel: BoolProperty(
+        name="Show Open Recent Panel",
+        description="Show or hide the Open Recent panel",
+        default=True
+    )
+    show_folder_name: BoolProperty(
+        name="Show Folder Name for '__init__.py'",
+        description="Displays the folder name for '__init__.py' files instead of the file name itself",
+        default=True
+    )
+    max_entries: IntProperty(
+        name="Max Recent Files",
+        description="Maximum number of recent files to keep",
+        default=30,
+        min=3,
+        max=50
+    )
+    backup_filepath: StringProperty(
+        name="Backup Filepath",
+        subtype='FILE_PATH',
+        default=str(Path.home() / "Documents" / "textify")
+    )
 
     # Internal settings
-    settings_restored: BoolProperty(default=True)
-    expand_highlight_occurrences: BoolProperty(name="Expand Highlight Occurrences", default=False)
-    expand_script_formatter: BoolProperty(name="Expand Script Formatter", default=False)
+    settings_restored: BoolProperty(
+        default=True
+    )
+    expand_highlight_occurrences: BoolProperty(
+        name="Expand Highlight Occurrences",
+        default=False
+    )
+    expand_script_formatter: BoolProperty(
+        name="Expand Script Formatter",
+        default=False
+    )
     preference_section: EnumProperty(
-        name="Preference Section", description="Select which section to view",
-        items=[('TOOLS', "Tools", "View tools settings"), ('KEYMAP', "Keymap", "View keymap settings"),
-               ('SETTINGS', "Settings", "View general settings"), ('ABOUT', "About", "About Textify Addon")],
+        name="Preference Section",
+        description="Select which section to view",
+        items=[
+            ('TOOLS', "Tools", "View tools settings"),
+            ('KEYMAP', "Keymap", "View keymap settings"),
+            ('SETTINGS', "Settings", "View general settings"),
+            ('ABOUT', "About", "About Textify Addon")
+        ],
         default='TOOLS'
     )
 
@@ -275,8 +416,6 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
         self.draw_open_recent_settings(layout)
         if self.enable_highlight_occurrences:
             self.draw_highlight_occurrences_settings(layout)
-        if self.enable_script_formatter:
-            self.draw_script_formatter_settings(layout)
 
     def draw_settings_section(self, layout):
         # Backup & Restore
@@ -298,15 +437,18 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
         sections = [
             ("Product Page", 'WINDOW', [
                 ("Blender Extensions", 'BLENDER', "https://extensions.blender.org/add-ons/textify/"),
-                ("GitHub", github_icon.icon_id, "https://github.com/Jishnu-jithu/textify")
+                ("GitHub", get_icon("github"), "https://github.com/Jishnu-jithu/textify")
             ]),
             ("Links", 'DECORATE_LINKED', [
                 ("Documentation", 'HELP', "https://jishnujithu.gitbook.io/textify"),
-                ("Join Discord Server", discord_icon.icon_id, "https://discord.gg/2E8GZtmvYf")
+                ("Join Discord Server", get_icon("discord"), "https://discord.gg/2E8GZtmvYf")
             ]),
             ("Feedback", 'TEXT', [
                 ("Report a Bug", 'ERROR', "https://discord.com/channels/1356442907338608640/1356460250047189142"),
                 ("Request a Feature", 'OUTLINER_OB_LIGHT', "https://discord.com/channels/1356442907338608640/1356535534238957668")
+            ]),
+            ("Support the Project", 'FUND', [
+                ("Buy on Gumroad", get_icon("gumroad"), "https://jishnukv.gumroad.com/l/textify")
             ])
         ]
 
@@ -314,10 +456,10 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
             box = layout.box()
             box.label(text=title, icon=icon)
             for text, btn_icon, url in items:
-                if isinstance(btn_icon, str):
-                    box.operator("wm.url_open", text=text, icon=btn_icon).url = url
-                else:
+                if isinstance(btn_icon, int):  # Custom icon
                     box.operator("wm.url_open", text=text, icon_value=btn_icon).url = url
+                else:
+                    box.operator("wm.url_open", text=text, icon=btn_icon).url = url
 
     def draw_category_settings(self, layout):
         box = layout.box()
@@ -328,28 +470,41 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
                     box.prop(self, prop)
 
     def draw_addon_installer_settings(self, layout):
-        draw_labeled_box(layout, "Addon Installer Settings", lambda box: [
-            box.prop(self, "zip_name_style"),
+        def draw_content(box):
+            box.prop(self, "zip_name_style")
             box.prop(self, "addon_installer_popup_width")
-        ])
+
+        draw_labeled_box(layout, "Addon Installer Settings", draw_content)
 
     def draw_code_map_settings(self, layout):
-        draw_labeled_box(layout, "Code Map Settings", lambda box: [
-            box.prop(self, "auto_activate_search"),
-            box.prop(self, "show_code_filters"),
+        def draw_content(box):
+            box.prop(self, "auto_activate_search")
+            box.prop(self, "show_code_filters")
             box.prop(self, "code_map_popup_width")
-        ])
+
+        draw_labeled_box(layout, "Code Map Settings", draw_content)
 
     def draw_find_replace_settings(self, layout):
-        draw_labeled_box(layout, "Find & Replace Settings", lambda box: box.prop(self, "auto_activate_find"))
+        def draw_box_content(box):
+            box.prop(self, "auto_activate_find")
+            box.prop(self, "use_textify_find_replace")
+            
+            if self.use_textify_find_replace:
+                box.prop(self, "realtime_search")
+
+                if not self.realtime_search:
+                    box.prop(self, "enable_find_on_enter")
+
+        draw_labeled_box(layout, "Find & Replace Settings", draw_box_content)
 
     def draw_open_recent_settings(self, layout):
-        draw_labeled_box(layout, "Open Recent Settings", lambda box: [
-            box.prop(self, "recent_data_path"),
-            box.prop(self, "max_entries"),
-            box.prop(self, "show_open_recent_panel"),
+        def draw_content(box):
+            box.prop(self, "recent_data_path")
+            box.prop(self, "max_entries")
+            box.prop(self, "show_open_recent_panel")
             box.prop(self, "show_folder_name")
-        ])
+
+        draw_labeled_box(layout, "Open Recent Settings", draw_content)
 
     def draw_highlight_occurrences_settings(self, layout):
         def draw_content(box):
@@ -371,23 +526,6 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
 
         draw_expand_box(layout, "expand_highlight_occurrences", "Highlight Occurrences Settings", self, draw_content)
 
-    def draw_script_formatter_settings(self, layout):
-        def draw_content(box):
-            box.label(text="Python Module Status", icon='INFO')
-            modules = {"autopep8": is_module_installed("autopep8"), "pycodestyle": is_module_installed("pycodestyle")}
-            missing = [name for name, installed in modules.items() if not installed]
-
-            for name, installed in modules.items():
-                box.label(text=name, icon='CHECKMARK' if installed else 'CANCEL')
-
-            if missing:
-                alert_box = box.box()
-                alert_box.alert = True
-                alert_box.label(text=f"Missing Python module(s): {', '.join(missing)}", icon='ERROR')
-                alert_box.operator("text.install_formatter_deps", icon='IMPORT')
-
-        draw_expand_box(layout, "expand_script_formatter", "Script Formatter Settings", self, draw_content)
-
 
 class TEXTIFY_PT_toggle_popover(bpy.types.Panel):
     bl_label = "Textify"
@@ -406,12 +544,12 @@ class TEXTIFY_PT_toggle_popover(bpy.types.Panel):
         layout.operator("preferences.addon_show", text="Open Settings").module = __name__
 
 
-def add_to_header(self, context):
+def draw_header(self, context):
     self.layout.popover_group("TEXT_EDITOR", region_type="WINDOW", context="", category="")
 
 
 classes = [TEXTIFY_preferences, TEXTIFY_PT_toggle_popover]
-submodules = [tools, ops]
+submodules = [tools, ops, keymap, textify_icons]
 
 
 def register():
@@ -420,9 +558,7 @@ def register():
     for mod in submodules:
         mod.register()
 
-    bpy.types.TEXT_HT_header.append(add_to_header)
-    keymap.register_keymap()
-    textify_icons.load_icons()
+    bpy.types.TEXT_HT_header.append(draw_header)
 
     prefs = bpy.context.preferences.addons[__package__].preferences
     prefs.update_colors(bpy.context)
@@ -441,15 +577,4 @@ def unregister():
         except Exception as e:
             print(f"Error unregistering class {getattr(cls, '__name__', cls)}: {e}")
 
-    keymap.unregister_keymap()
-
-    try:
-        bpy.types.TEXT_HT_header.remove(add_to_header)
-    except (ValueError, Exception) as e:
-        if not isinstance(e, ValueError):
-            print(f"Error removing add_to_header from TEXT_HT_header: {e}")
-
-    textify_icons.unload_icons()
-
-    if bpy.app.timers.is_registered(auto_restore_prefs):
-        bpy.app.timers.unregister(auto_restore_prefs)
+    bpy.types.TEXT_HT_header.remove(draw_header)

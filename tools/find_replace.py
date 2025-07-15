@@ -1,6 +1,6 @@
 import bpy
 from bpy.app.translations import contexts as i18n_contexts
-from .. import textify_icons
+from ..textify_icons import get_icon
 
 
 # ------------------------------------------------------------------------
@@ -15,10 +15,6 @@ def get_addon_prefs(context):
     return None
 
 
-highlight_icon = textify_icons.get_icon("highlight")
-highlight_id = highlight_icon.icon_id if highlight_icon else 0
-
-
 # ------------------------------------------------------------------------
 # Property Group
 # ------------------------------------------------------------------------
@@ -26,21 +22,55 @@ highlight_id = highlight_icon.icon_id if highlight_icon else 0
 
 class FIND_REPLACE_PG_properties(bpy.types.PropertyGroup):
     def update_search(self, context):
+        prefs = get_addon_prefs(context)
+        if prefs is None or context.area is None or context.area.type != 'TEXT_EDITOR':
+            return
+
+        context.space_data.find_text = self.find_text
+        context.space_data.replace_text = self.replace_text
+
+        # Run search if the user allows automatic find on enter
+        if prefs.enable_find_on_enter:
+            bpy.ops.text.find()
+
+    def update_realtime_search(self, context):
+        if context.area and context.area.type == 'TEXT_EDITOR':
+            context.space_data.find_text = self.find_text_live
+            context.space_data.replace_text = self.replace_text_live
+
+    def update_replace_search(self, context):
         if context.area and context.area.type == 'TEXT_EDITOR':
             context.space_data.find_text = self.find_text
             context.space_data.replace_text = self.replace_text
+
+    def update_replace_realtime(self, context):
+        if context.area and context.area.type == 'TEXT_EDITOR':
+            context.space_data.find_text = self.find_text_live
+            context.space_data.replace_text = self.replace_text_live
 
     find_text: bpy.props.StringProperty(
         name="Find Text",
         description="Text to search for with the find tool",
         update=update_search,
+    )
+
+    find_text_live: bpy.props.StringProperty(
+        name="Find Text (Real-time)",
+        description="Text to search for with real-time search enabled",
+        update=update_realtime_search,
         options={'TEXTEDIT_UPDATE'}
     )
 
     replace_text: bpy.props.StringProperty(
         name="Replace Text",
         description="Text to replace selected text with using the replace tool",
-        update=update_search,
+        update=update_replace_search,
+    )
+
+    replace_text_live: bpy.props.StringProperty(
+        name="Replace Text (Real-time)",
+        description="Text to replace selected text with using the replace tool in real-time mode",
+        update=update_replace_realtime,
         options={'TEXTEDIT_UPDATE'}
     )
 
@@ -126,6 +156,7 @@ class TEXT_OT_find_replace(bpy.types.Operator):
         st = context.space_data
         text = st.text
         wm_textify = context.window_manager.textify
+        prefs = get_addon_prefs(context)
 
         if text:
             sel_start, sel_end = text.current_character, text.select_end_character
@@ -133,15 +164,27 @@ class TEXT_OT_find_replace(bpy.types.Operator):
                 selected = text.current_line.body[min(
                     sel_start, sel_end):max(sel_start, sel_end)]
 
-                wm_textify.find_text = selected
+                # Set the appropriate properties based on realtime_search setting
+                if prefs and prefs.realtime_search:
+                    wm_textify.find_text_live = selected
+                    wm_textify.replace_text_live = selected
+                else:
+                    wm_textify.find_text = selected
+                    wm_textify.replace_text = selected
+
                 bpy.ops.text.find_set_selected()
                 bpy.ops.text.find_previous()
-
-                wm_textify.replace_text = selected
                 bpy.ops.text.replace_set_selected()
 
-        width = 430 if max(len(wm_textify.find_text), len(
-            wm_textify.replace_text)) > 54 else 360
+        # Determine text length for popup width calculation
+        if prefs and prefs.realtime_search:
+            find_text_len = len(wm_textify.find_text_live)
+            replace_text_len = len(wm_textify.replace_text_live)
+        else:
+            find_text_len = len(wm_textify.find_text)
+            replace_text_len = len(wm_textify.replace_text)
+
+        width = 430 if max(find_text_len, replace_text_len) > 54 else 360
         return context.window_manager.invoke_popup(self, width=width)
 
     def draw(self, context):
@@ -167,10 +210,10 @@ class TEXT_OT_find_replace(bpy.types.Operator):
         row.prop(st, "use_find_wrap", text="Wrap Around", toggle=True)
         row.prop(st, "use_find_all", text="All Data-Blocks", toggle=True)
 
-        if getattr(prefs, "highlight_mode", "") == "FIND_TEXT":
+        if getattr(prefs, "highlight_mode", "") != "SELECTION":
             row.separator()
             row.prop(prefs, "enable_highlight_occurrences", text="",
-                     icon_value=highlight_id, toggle=True)
+                     icon_value=get_icon("highlight"), toggle=True)
 
         layout.separator()
 
@@ -184,18 +227,31 @@ class TEXT_OT_find_replace(bpy.types.Operator):
         row.scale_x = 1.1
         sub = row.row(align=True)
 
+        if prefs.use_textify_find_replace:
+            prop = wm_textify
+        else:
+            prop = st
+
         if getattr(prefs, "auto_activate_find", False) and not st.find_text:
             sub.activate_init = True
 
-        sub.prop(wm_textify, "find_text", text="", icon='VIEWZOOM')
+        # Use appropriate find_text property based on realtime_search setting
+        if prefs and prefs.realtime_search and prefs.use_textify_find_replace:
+            sub.prop(prop, "find_text_live", text="", icon='VIEWZOOM')
+        else:
+            sub.prop(prop, "find_text", text="", icon='VIEWZOOM')
 
         row.operator("text.find", text="", icon="SORT_ASC")
         row.operator("text.find_previous", text="", icon="SORT_DESC")
 
         row = layout.row(align=True)
         row.scale_x = 1.1
-        row.prop(wm_textify, "replace_text",
-                 text="", icon='DECORATE_OVERRIDE')
+
+        # Use appropriate replace_text property based on realtime_search setting
+        if prefs and prefs.realtime_search and prefs.use_textify_find_replace:
+            row.prop(prop, "replace_text_live", text="", icon='DECORATE_OVERRIDE')
+        else:
+            row.prop(prop, "replace_text", text="", icon='DECORATE_OVERRIDE')
         row.operator("text.replace", text="", icon="ARROW_LEFTRIGHT")
         row.operator("text.replace", text="", icon="ANIM").all = True
 
@@ -236,12 +292,25 @@ class TEXT_OT_find_replace(bpy.types.Operator):
 def textify_find_replace_draw(self, context):
     layout = self.layout
     st = context.space_data
+    wm_textify = context.window_manager.textify
+    prefs = get_addon_prefs(context)
 
     layout.active = bool(st.text)
 
+    if prefs.use_textify_find_replace:
+        prop = wm_textify
+    else:
+        prop = st
+
     col = layout.column()
     row = col.row(align=True)
-    row.prop(st, "find_text", text="", icon='VIEWZOOM')
+
+    # Use appropriate find_text property based on realtime_search setting
+    if prefs and prefs.realtime_search and prefs.use_textify_find_replace:
+        row.prop(prop, "find_text_live", text="", icon='VIEWZOOM')
+    else:
+        row.prop(prop, "find_text", text="", icon='VIEWZOOM')
+
     row.operator("text.find_set_selected", text="", icon='EYEDROPPER')
 
     row = col.row(align=True)
@@ -251,7 +320,13 @@ def textify_find_replace_draw(self, context):
     layout.separator()
     col = layout.column()
     row = col.row(align=True)
-    row.prop(st, "replace_text", text="", icon='DECORATE_OVERRIDE')
+
+    # Use appropriate replace_text property based on realtime_search setting
+    if prefs and prefs.realtime_search and prefs.use_textify_find_replace:
+        row.prop(prop, "replace_text_live", text="", icon='DECORATE_OVERRIDE')
+    else:
+        row.prop(prop, "replace_text", text="", icon='DECORATE_OVERRIDE')
+
     row.operator("text.replace_set_selected", text="", icon='EYEDROPPER')
 
     row = col.row(align=True)

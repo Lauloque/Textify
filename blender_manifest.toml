@@ -7,7 +7,7 @@ tagline = "Streamline and Enhance Blender’s Text Editor"
 maintainer = "Jishnu, kaio <jishnukv661@gmail.com>"
 type = "add-on"
 
-website = "https://github.com/DesignLipsx/Textify/"
+website = "https://discord.com/channels/1356442907338608640/1356442907812298752"
 
 tags = ["Text Editor", "Development"]
 
@@ -27,6 +27,5 @@ wheels = [
 ]
 
 [permissions]
-network = "Download and install Python modules for script formatting"
 files = "Read/write settings, and manage scripts on disk"
 clipboard = "Copy class bl_idname and identifiers to clipboard"

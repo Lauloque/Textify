@@ -564,7 +564,7 @@ class TEXTIFY_MT_open_recent(Menu):
 
             layout.separator()
             layout.operator("textify.clear_recent",
-                            text="Clear Recent Files       ", icon='TRASH')
+                            text="Clear Recent Files                        ", icon='TRASH')
         else:
             layout.label(text="No recent files")
 
