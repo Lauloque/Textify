@@ -512,6 +512,10 @@ class TEXTIFY_preferences(bpy.types.AddonPreferences):
             sub.label(text="Highlighting Behavior:")
             for prop in ["highlight_mode", "case_sensitive", "show_in_scroll"]:
                 sub.prop(self, prop)
+                if prop == "highlight_mode" and self.highlight_mode != "FIND_TEXT":
+                    sub.label(text="Selection highlight works best with an odd font size number in the text editor.",
+                              icon='WARNING_LARGE'
+                             )
 
             if self.show_in_scroll:
                 sub_box = box.box()
@@ -578,3 +582,4 @@ def unregister():
             print(f"Error unregistering class {getattr(cls, '__name__', cls)}: {e}")
 
     bpy.types.TEXT_HT_header.remove(draw_header)
+
